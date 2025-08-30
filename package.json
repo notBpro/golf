@@ -12,6 +12,8 @@
   "dependencies": {
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.12",
+    "groq": "^4.6.0",
+    "groq-sdk": "^0.30.0",
     "lucide-react": "^0.542.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
