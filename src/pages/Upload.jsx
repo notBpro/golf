@@ -1,13 +1,16 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WavyBackground } from '../components/ui/wavy-background';
-import { Upload as UploadIcon, Camera, FileImage, X, Check } from 'lucide-react';
+import { Upload as UploadIcon, Camera, FileImage, X, Check, Eye } from 'lucide-react';
+import Tesseract from 'tesseract.js';
 
 const Upload = () => {
   const [dragActive, setDragActive] = useState(false);
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploaded, setUploaded] = useState(false);
+  const [ocrResults, setOcrResults] = useState(null);
+  const [progress, setProgress] = useState(0);
   const fileInputRef = useRef(null);
 
   const handleDrag = (e) => {
@@ -37,21 +40,89 @@ const Upload = () => {
     }
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!file) return;
     
     setUploading(true);
-    // Simulate upload
-    setTimeout(() => {
+    setProgress(0);
+
+    try {
+      // Use Tesseract.js for OCR
+      const result = await Tesseract.recognize(
+        file,
+        'eng',
+        {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              setProgress(Math.round(m.progress * 100));
+            }
+          }
+        }
+      );
+
+      // Parse the text to extract golf scores
+      const extractedText = result.data.text;
+      const parsedScores = parseScorecard(extractedText);
+      
+      setOcrResults({
+        rawText: extractedText,
+        scores: parsedScores
+      });
+      
       setUploading(false);
       setUploaded(true);
-    }, 2000);
+      
+    } catch (error) {
+      console.error('OCR Error:', error);
+      setUploading(false);
+      // Still show as uploaded for demo purposes
+      setUploaded(true);
+      setOcrResults({
+        rawText: "Could not read scorecard clearly. Please try with better lighting or angle.",
+        scores: []
+      });
+    }
+  };
+
+  // Simple scorecard parser - looks for numbers that could be golf scores
+  const parseScorecard = (text) => {
+    const lines = text.split('\n');
+    const scores = [];
+    
+    lines.forEach((line, index) => {
+      // Look for lines with numbers 1-18 (hole numbers) and scores
+      const holeMatch = line.match(/(\d+).*?(\d+)/);
+      if (holeMatch) {
+        const hole = parseInt(holeMatch[1]);
+        const score = parseInt(holeMatch[2]);
+        
+        // Basic validation for golf scores
+        if (hole >= 1 && hole <= 18 && score >= 1 && score <= 12) {
+          scores.push({ hole, score });
+        }
+      }
+    });
+    
+    return scores;
   };
 
   const resetUpload = () => {
     setFile(null);
     setUploaded(false);
     setUploading(false);
+    setOcrResults(null);
+    setProgress(0);
+  };
+
+  const calculateStats = (scores) => {
+    if (scores.length === 0) return null;
+    
+    const total = scores.reduce((sum, s) => sum + s.score, 0);
+    const average = (total / scores.length).toFixed(1);
+    const best = Math.min(...scores.map(s => s.score));
+    const worst = Math.max(...scores.map(s => s.score));
+    
+    return { total, average, best, worst, holesPlayed: scores.length };
   };
 
   return (
@@ -80,7 +151,7 @@ const Upload = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             style={{
-              maxWidth: '600px',
+              maxWidth: '700px',
               width: '100%',
               textAlign: 'center'
             }}
@@ -206,7 +277,7 @@ const Upload = () => {
                       </motion.button>
                     </div>
 
-                    {/* Progress or Success */}
+                    {/* Progress, Success, or Results */}
                     <AnimatePresence mode="wait">
                       {uploading ? (
                         <motion.div
@@ -216,34 +287,43 @@ const Upload = () => {
                           exit={{ opacity: 0 }}
                           style={{ textAlign: 'center' }}
                         >
-                          <motion.div
-                            style={{
-                              width: '50px',
-                              height: '50px',
-                              border: '3px solid rgba(0, 191, 255, 0.3)',
-                              borderTop: '3px solid #00bfff',
-                              borderRadius: '50%',
-                              margin: '0 auto 1rem auto'
-                            }}
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                          />
+                          <div style={{
+                            width: '100px',
+                            height: '100px',
+                            border: '4px solid rgba(0, 191, 255, 0.3)',
+                            borderTop: '4px solid #00bfff',
+                            borderRadius: '50%',
+                            margin: '0 auto 1rem auto',
+                            position: 'relative'
+                          }}>
+                            <motion.div
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                              style={{ width: '100%', height: '100%' }}
+                            />
+                            <div style={{
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, -50%)',
+                              color: '#00bfff',
+                              fontWeight: 'bold'
+                            }}>
+                              {progress}%
+                            </div>
+                          </div>
                           <p style={{ color: '#00bfff', fontSize: '1.1rem' }}>
-                            Processing your scorecard...
+                            Reading scorecard with AI...
                           </p>
                         </motion.div>
-                      ) : uploaded ? (
+                      ) : uploaded && ocrResults ? (
                         <motion.div
-                          key="uploaded"
+                          key="results"
                           initial={{ opacity: 0, scale: 0.8 }}
                           animate={{ opacity: 1, scale: 1 }}
-                          style={{ textAlign: 'center' }}
+                          style={{ textAlign: 'left' }}
                         >
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ delay: 0.2, type: "spring", stiffness: 300 }}
-                          >
+                          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
                             <Check 
                               size={50} 
                               style={{ 
@@ -252,10 +332,73 @@ const Upload = () => {
                                 display: 'block'
                               }} 
                             />
-                          </motion.div>
-                          <p style={{ color: '#66ffb2', fontSize: '1.1rem' }}>
-                            Scorecard processed successfully!
-                          </p>
+                            <p style={{ color: '#66ffb2', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                              Scorecard Analyzed!
+                            </p>
+                          </div>
+
+                          {/* Results */}
+                          {ocrResults.scores.length > 0 ? (
+                            <div>
+                              <h4 style={{ color: '#ffffff', marginBottom: '1rem' }}>📊 Your Stats:</h4>
+                              {(() => {
+                                const stats = calculateStats(ocrResults.scores);
+                                return (
+                                  <div style={{ 
+                                    background: 'rgba(0, 0, 0, 0.3)', 
+                                    padding: '1rem', 
+                                    borderRadius: '0.5rem',
+                                    marginBottom: '1rem'
+                                  }}>
+                                    <p style={{ color: '#66ffb2', margin: '0.25rem 0' }}>
+                                      🏌️ Holes Played: {stats.holesPlayed}
+                                    </p>
+                                    <p style={{ color: '#66ffb2', margin: '0.25rem 0' }}>
+                                      📈 Total Score: {stats.total}
+                                    </p>
+                                    <p style={{ color: '#66ffb2', margin: '0.25rem 0' }}>
+                                      🎯 Average: {stats.average}
+                                    </p>
+                                    <p style={{ color: '#66ffb2', margin: '0.25rem 0' }}>
+                                      🔥 Best Hole: {stats.best}
+                                    </p>
+                                    <p style={{ color: '#66ffb2', margin: '0.25rem 0' }}>
+                                      😅 Worst Hole: {stats.worst}
+                                    </p>
+                                  </div>
+                                );
+                              })()}
+                              
+                              <details style={{ marginTop: '1rem' }}>
+                                <summary style={{ color: '#9ca3af', cursor: 'pointer' }}>
+                                  <Eye size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />
+                                  View Raw Text
+                                </summary>
+                                <pre style={{ 
+                                  color: '#9ca3af', 
+                                  fontSize: '0.8rem', 
+                                  background: 'rgba(0, 0, 0, 0.3)', 
+                                  padding: '1rem', 
+                                  borderRadius: '0.5rem',
+                                  marginTop: '0.5rem',
+                                  whiteSpace: 'pre-wrap',
+                                  maxHeight: '150px',
+                                  overflow: 'auto'
+                                }}>
+                                  {ocrResults.rawText}
+                                </pre>
+                              </details>
+                            </div>
+                          ) : (
+                            <div style={{ textAlign: 'center' }}>
+                              <p style={{ color: '#9ca3af' }}>
+                                {ocrResults.rawText}
+                              </p>
+                              <p style={{ color: '#9ca3af', fontSize: '0.9rem', marginTop: '1rem' }}>
+                                💡 Tip: Make sure the scorecard is well-lit and numbers are clearly visible
+                              </p>
+                            </div>
+                          )}
                         </motion.div>
                       ) : (
                         <motion.button
