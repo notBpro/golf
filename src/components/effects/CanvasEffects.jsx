@@ -86,111 +86,66 @@ export const MatrixEffect = ({ animationSpeed, containerClassName, colors }) => 
   );
 };
 
-// Card 2: Circuit Board Effect (enhanced and more visible)
-export const CircuitEffect = ({ animationSpeed, containerClassName, colors }) => {
+// Card 2: Green Progress Tracking Effect (fixed bottom bar positioning)
+export const ProgressTrackingEffect = ({ animationSpeed, containerClassName, colors }) => {
+  // Force green color instead of using the passed colors
+  const baseColor = '#22c55e'; // Green color
+  
   return (
     <motion.div
       className={`absolute inset-0 ${containerClassName}`}
-      initial={{ clipPath: 'polygon(0 0, 0 0, 0 100%, 0% 100%)' }}
-      animate={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0% 100%)' }}
-      exit={{ clipPath: 'polygon(0 0, 0 0, 0 100%, 0% 100%)' }}
+      initial={{ clipPath: 'circle(0% at 50% 50%)' }}
+      animate={{ clipPath: 'circle(100% at 50% 50%)' }}
+      exit={{ clipPath: 'circle(0% at 50% 50%)' }}
       transition={{ duration: animationSpeed / 10 }}
     >
-      {/* Horizontal circuit lines */}
-      {[...Array(8)].map((_, i) => (
+      {/* Moving bars - just moved the bottom one up slightly */}
+      {[...Array(4)].map((_, i) => (
         <motion.div
-          key={`h-line-${i}`}
+          key={i}
           style={{
             position: 'absolute',
-            height: '2px',
-            width: '0px',
-            background: colors ? `rgb(${colors[0][0]}, ${colors[0][1]}, ${colors[0][2]})` : '#ffffff',
-            top: `${12.5 * i + 10}%`,
-            left: '10%',
-            boxShadow: `0 0 6px ${colors ? `rgb(${colors[0][0]}, ${colors[0][1]}, ${colors[0][2]})` : '#ffffff'}`
+            width: '100px',
+            height: '4px',
+            background: baseColor,
+            top: `${25 + i * 13}%`, // Changed from 20 + i * 15 to 25 + i * 13 to avoid bottom cutoff
+            left: '20%',
+            boxShadow: `0 0 10px ${baseColor}`
           }}
           animate={{
-            width: ['0px', '150px', '300px', '150px', '0px'],
+            width: ['20px', '150px', '20px']
           }}
           transition={{
-            duration: 3,
+            duration: 2,
             repeat: Infinity,
             delay: i * 0.3,
+            ease: 'easeInOut'
           }}
         />
       ))}
       
-      {/* Vertical circuit lines */}
+      {/* Floating dots */}
       {[...Array(6)].map((_, i) => (
         <motion.div
-          key={`v-line-${i}`}
-          style={{
-            position: 'absolute',
-            width: '2px',
-            height: '0px',
-            background: colors ? `rgb(${colors[0][0]}, ${colors[0][1]}, ${colors[0][2]})` : '#ffffff',
-            left: `${16.6 * i + 15}%`,
-            top: '10%',
-            boxShadow: `0 0 6px ${colors ? `rgb(${colors[0][0]}, ${colors[0][1]}, ${colors[0][2]})` : '#ffffff'}`
-          }}
-          animate={{
-            height: ['0px', '100px', '200px', '100px', '0px'],
-          }}
-          transition={{
-            duration: 2.5,
-            repeat: Infinity,
-            delay: i * 0.4 + 1,
-          }}
-        />
-      ))}
-      
-      {/* Circuit nodes */}
-      {[...Array(12)].map((_, i) => (
-        <motion.div
-          key={`node-${i}`}
+          key={`dot-${i}`}
           style={{
             position: 'absolute',
             width: '8px',
             height: '8px',
+            background: baseColor,
             borderRadius: '50%',
-            background: colors ? `rgb(${colors[0][0]}, ${colors[0][1]}, ${colors[0][2]})` : '#ffffff',
-            left: `${Math.random() * 80 + 10}%`,
-            top: `${Math.random() * 80 + 10}%`,
-            boxShadow: `0 0 10px ${colors ? `rgb(${colors[0][0]}, ${colors[0][1]}, ${colors[0][2]})` : '#ffffff'}`
+            left: `${30 + (i % 3) * 20}%`,
+            top: `${60 + Math.floor(i / 3) * 20}%`,
+            boxShadow: `0 0 10px ${baseColor}`
           }}
           animate={{
-            scale: [0, 1, 1.5, 1, 0],
-            opacity: [0, 1, 1, 1, 0]
+            y: [-10, 10, -10],
+            opacity: [0.4, 1, 0.4]
           }}
           transition={{
-            duration: 2,
+            duration: 1.5,
             repeat: Infinity,
-            delay: Math.random() * 2,
-          }}
-        />
-      ))}
-      
-      {/* Connection pulses */}
-      {[...Array(4)].map((_, i) => (
-        <motion.div
-          key={`pulse-${i}`}
-          style={{
-            position: 'absolute',
-            width: '4px',
-            height: '4px',
-            borderRadius: '50%',
-            background: colors ? `rgb(${colors[0][0]}, ${colors[0][1]}, ${colors[0][2]})` : '#ffffff',
-            left: '20%',
-            top: `${25 * i + 15}%`,
-          }}
-          animate={{
-            x: [0, 200, 0],
-            opacity: [0, 1, 0]
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            delay: i * 0.5,
+            delay: i * 0.2,
             ease: 'easeInOut'
           }}
         />

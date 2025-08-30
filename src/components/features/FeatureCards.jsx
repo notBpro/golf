@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import FeatureCard from './FeatureCard';
 import { GolfIcon, ChartIcon, TargetIcon } from '../icons/GolfIcons';
-import { MatrixEffect, CircuitEffect, RadarEffect } from '../effects/CanvasEffects';
+import { MatrixEffect, ProgressTrackingEffect, RadarEffect } from '../effects/CanvasEffects';
 
 const FeatureCards = ({ globalHovered, setGlobalHovered }) => {
   const itemVariants = {
@@ -40,7 +40,7 @@ const FeatureCards = ({ globalHovered, setGlobalHovered }) => {
       </FeatureCard>
 
       <FeatureCard title="Track Progress" icon={<ChartIcon />}>
-        <CircuitEffect
+        <ProgressTrackingEffect
           animationSpeed={4}
           containerClassName="bg-gradient-to-br from-slate-900 to-slate-700"
           colors={[[148, 163, 184]]}
