@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { AuroraBackground } from '../components/ui/aurora-background';
 import FeatureCards from '../components/features/FeatureCards';
 
 const Landing = () => {
   const [globalHovered, setGlobalHovered] = useState(false);
+  const navigate = useNavigate();
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -26,6 +28,10 @@ const Landing = () => {
         ease: "easeOut",
       },
     },
+  };
+
+  const handleLaunchAnalytics = () => {
+    navigate('/upload');
   };
 
   return (
@@ -104,11 +110,12 @@ const Landing = () => {
               />
             </div>
 
-            {/* Simple CTA Button */}
+            {/* Simple CTA Button - Now linked to upload page */}
             <motion.div
               variants={itemVariants}
             >
               <motion.button
+                onClick={handleLaunchAnalytics}
                 style={{
                   background: 'linear-gradient(135deg, #00bfff, #66ffb2)',
                   color: '#000000',
